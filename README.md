@@ -1,2 +1,3 @@
 # DSA2101-Final-Project
-To store code and markdown
+
+We could write our report here and our contribution
