@@ -1,0 +1,46 @@
+---
+title: "Project"
+author: "Muhammad Salman Al Farisi"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+taylor_album_songs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-10-17/taylor_album_songs.csv')
+taylor_all_songs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-10-17/taylor_all_songs.csv')
+taylor_albums <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-10-17/taylor_albums.csv')
+```
+
+## Choosing the Album
+```{r}
+# 1. Top 5 albums with highest Metacritic score
+top_5_metacritic <- taylor_albums[order(-taylor_albums$metacritic_score, na.last = NA), ][1:5, "album_name"]
+
+# 2. Bottom 5 albums with lowest Metacritic score
+bottom_5_metacritic <- taylor_albums[order(taylor_albums$metacritic_score, na.last = NA), ][1:5, "album_name"]
+
+# 3. Top 5 albums with highest user score
+top_5_user <- taylor_albums[order(-taylor_albums$user_score, na.last = NA), ][1:5, "album_name"]
+
+# 4. Bottom 5 albums with lowest user score
+bottom_5_user <- taylor_albums[order(taylor_albums$user_score, na.last = NA), ][1:5, "album_name"]
+
+# Find the intersection of top 5 Metacritic and top 5 user scores
+top_intersection <- intersect(top_5_metacritic, top_5_user)
+
+# Find the intersection of bottom 5 Metacritic and bottom 5 user scores
+bottom_intersection <- intersect(bottom_5_metacritic, bottom_5_user)
+
+# Print the intersections
+print(top_intersection)
+print(bottom_intersection)
+```
+
