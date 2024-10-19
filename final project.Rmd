@@ -1,5 +1,5 @@
 ---
-title: "Project"
+title: "Final Project"
 author: "Muhammad Salman Al Farisi"
 date: "`r Sys.Date()`"
 output: html_document
@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 ```{r}
 library(tidyverse)
+library(dplyr)
 ```
 
 ```{r}
@@ -19,28 +20,79 @@ taylor_all_songs <- readr::read_csv('https://raw.githubusercontent.com/rfordatas
 taylor_albums <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-10-17/taylor_albums.csv')
 ```
 
-## Choosing the Album
+## Choosing the top three and bottom three albums
 ```{r}
 # 1. Top 5 albums with highest Metacritic score
-top_5_metacritic <- taylor_albums[order(-taylor_albums$metacritic_score, na.last = NA), ][1:5, "album_name"]
+top_5_metacritic <- taylor_albums %>%
+  arrange(desc(metacritic_score)) %>%
+  filter(!is.na(metacritic_score)) %>%
+  slice(1:5) %>%
+  select(album_name)
 
 # 2. Bottom 5 albums with lowest Metacritic score
-bottom_5_metacritic <- taylor_albums[order(taylor_albums$metacritic_score, na.last = NA), ][1:5, "album_name"]
+bottom_5_metacritic <- taylor_albums %>%
+  arrange(metacritic_score) %>%
+  filter(!is.na(metacritic_score)) %>% 
+  slice(1:5) %>% 
+  select(album_name)
 
 # 3. Top 5 albums with highest user score
-top_5_user <- taylor_albums[order(-taylor_albums$user_score, na.last = NA), ][1:5, "album_name"]
+top_5_user <- taylor_albums %>%
+  arrange(desc(user_score)) %>%
+  filter(!is.na(user_score)) %>%  
+  slice(1:5) %>%
+  select(album_name)
 
 # 4. Bottom 5 albums with lowest user score
-bottom_5_user <- taylor_albums[order(taylor_albums$user_score, na.last = NA), ][1:5, "album_name"]
+bottom_5_user <- taylor_albums %>%
+  arrange(user_score) %>%
+  filter(!is.na(user_score)) %>%  
+  slice(1:5) %>% 
+  select(album_name)
 
 # Find the intersection of top 5 Metacritic and top 5 user scores
-top_intersection <- intersect(top_5_metacritic, top_5_user)
+top_intersection <- top_5_metacritic %>%
+  semi_join(top_5_user, by = "album_name") %>%
+  slice(1:3) %>%
+  select(album_name)
 
 # Find the intersection of bottom 5 Metacritic and bottom 5 user scores
-bottom_intersection <- intersect(bottom_5_metacritic, bottom_5_user)
+bottom_intersection <- bottom_5_metacritic %>%
+  semi_join(bottom_5_user, by = "album_name") %>%
+  slice(1:3) %>%
+  select(album_name)
 
 # Print the intersections
 print(top_intersection)
 print(bottom_intersection)
+
+# Top 3 are Red (Taylor's Version), folklore, evermore, 
+# Bottom 3 are reputation, Fearless, 1989
+
+# Note: Here we take into account both the metacritic_score and user_score for 
+# deciding which are top three and bottom three.
+```
+
+## Cleaning the data (Melisa)
+```{r}
+
+```
+
+## Checking Numerical Correlation (Kristine)
+```{r}
+
+```
+
+## Checking Categorical correlation (Sandrina)
+```{r}
+
+```
+
+## Checking Logical correlation (Salman)
+```{r}
+# The logical features are: ep, bonus_track, explicit
+# I think the logical correlation can't be computed for this dataset because the
+# score is based on albums and the features is based on songs, say I aggregate the
+# features for each album, then it will becomes numerical feature instead of categorical
 ```
 
