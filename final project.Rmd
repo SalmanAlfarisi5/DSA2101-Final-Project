@@ -94,5 +94,7 @@ print(bottom_intersection)
 # I think the logical correlation can't be computed for this dataset because the
 # score is based on albums and the features is based on songs, say I aggregate the
 # features for each album, then it will becomes numerical feature instead of categorical
+# Looking at the taylor_albums dataset, it's also impossible to do correlation test 
+# since the data for TRUE ep has missing value for metacritic score and user_score
 ```
 
