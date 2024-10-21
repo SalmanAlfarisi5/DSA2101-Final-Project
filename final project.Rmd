@@ -75,7 +75,16 @@ print(bottom_intersection)
 
 ## Cleaning the data (Melisa)
 ```{r}
-
+taylor_all_songs$artist <- ifelse(taylor_all_songs$album_name == "Beautiful Eyes",
+                                  "Taylor Swift", taylor_all_songs$artist)
+```
+```{r}
+album <- left_join(taylor_album_songs, taylor_albums, by = "album_name") %>%
+  select(album_name, ep = ep.x, album_release = album_release.x, track_number, track_name,
+         artist, featuring, bonus_track, single_release, track_release, danceability,
+         energy, key, loudness, mode, speechiness, acousticness, instrumentalness,
+         liveness, valence, tempo, time_signature, duration_ms, explicit, key_name,
+         mode_name, key_mode, metacritic_score, user_score)
 ```
 
 ## Checking Numerical Correlation (Kristine)
