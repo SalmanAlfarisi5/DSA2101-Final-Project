@@ -1,0 +1,129 @@
+---
+title: "Data Cleaning Group Project"
+author: "Melisa Abigail Thevandi"
+date: "2024-10-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, 
+                      include = TRUE,
+                      fig.align = "center",  out.width = "80%")
+```
+
+```{r}
+# Load necessary packages
+library(lubridate)
+library(readxl)
+library(tidyverse)
+library(stringr)
+# Disable scientific notation
+options(scipen = 999)
+```
+
+```{r}
+# install.packages("tidytuesdayR")
+
+tuesdata <- tidytuesdayR::tt_load('2023-10-17')
+
+taylor_album_songs <- tuesdata$taylor_album_songs
+taylor_all_songs <- tuesdata$taylor_all_songs
+taylor_albums <- tuesdata$taylor_albums
+```
+
+# Missing Values is not being removed since it indicates that there is no data.
+
+# Check the uniqueness
+
+### taylor_album_songs
+```{r}
+glimpse(taylor_album_songs)
+```
+##### Number of album
+```{r}
+taylor_album_songs %>% count(album_name)
+```
+#### Filter track_name that has n > 1
+```{r}
+taylor_album_songs %>% count(track_name) %>% filter(n > 1)
+# None
+```
+
+
+### taylor_all_songs
+```{r}
+glimpse(taylor_all_songs)
+```
+#### Number of album_name occurrences
+```{r}
+taylor_all_songs %>% count(album_name)
+# the album that's present in taylor_album_songs has the number of occurrences
+# some albums are not present in taylor_album_songs
+```
+#### Checking the albums in taylor_all_songs that are not present in taylor_album_songs
+```{r}
+anti_join(taylor_all_songs, taylor_album_songs, by = "album_name")
+```
+```{r}
+anti_join(taylor_all_songs, taylor_album_songs, by = "album_name") %>% count(album_name)
+# album_name Beautiful Eyes, Fearless, Red, and The Taylor Swift Holiday Collection are not
+# in taylor_album_songs;
+# 
+# songs with album_name=NA means that the songs are not in any album;
+#
+# songs in Beautiful Eyes have a lot of missing data
+```
+#### Filter track_name that has n > 1
+```{r}
+taylor_all_songs %>% count(track_name) %>% filter(n > 1)
+# I'm Only Me When I'm With You appears twice
+```
+#### Check the duplicate track_name
+```{r}
+taylor_all_songs %>% filter(track_name %in% "I'm Only Me When I'm With You")
+# the song appears in Taylor Swift and Beautiful Eyes album
+```
+
+### taylor_albums
+```{r}
+glimpse(taylor_albums)
+```
+#### Filter album_name that has n > 1
+```{r}
+taylor_albums %>% count(album_name) %>% filter(n > 1)
+# None
+```
+
+
+
+# Handling Some Missing Data
+
+### Change artist = NA to artist = "Taylor Swift" in taylor_all_songs, for album_name = Beautiful Eyes
+```{r}
+taylor_all_songs$artist <- ifelse(taylor_all_songs$album_name == "Beautiful Eyes",
+                                  "Taylor Swift", taylor_all_songs$artist)
+```
+```{r}
+taylor_all_songs
+```
+
+
+# Joining Data
+
+### Joining by album for taylor_album_songs and taylor_albums
+```{r}
+album <- left_join(taylor_album_songs, taylor_albums, by = "album_name") %>%
+  select(album_name, ep = ep.x, album_release = album_release.x, track_number, track_name,
+         artist, featuring, bonus_track, single_release, track_release, danceability,
+         energy, key, loudness, mode, speechiness, acousticness, instrumentalness,
+         liveness, valence, tempo, time_signature, duration_ms, explicit, key_name,
+         mode_name, key_mode, metacritic_score, user_score)
+glimpse(album)
+# all rows have metacritic_score and user_score
+```
+
+
+```{r}
+write.csv(album, "../data/album.csv", row.names=FALSE)
+```
+
