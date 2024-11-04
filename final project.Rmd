@@ -2,7 +2,9 @@
 title: "Final Project"
 author: "Muhammad Salman Al Farisi"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -11,7 +13,16 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 ```{r}
 library(tidyverse)
+library(stringr)
+library(lubridate)
+library(readxl)
+library(ggplot2)
 library(dplyr)
+library(tidyr)
+library(viridis)
+library(gridExtra) 
+library(reshape2)
+library(ggridges)
 ```
 
 ```{r}
@@ -20,90 +31,188 @@ taylor_all_songs <- readr::read_csv('https://raw.githubusercontent.com/rfordatas
 taylor_albums <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-10-17/taylor_albums.csv')
 ```
 
-## Choosing the top three and bottom three albums
+
 ```{r}
-# 1. Top 5 albums with highest Metacritic score
-top_5_metacritic <- taylor_albums %>%
-  arrange(desc(metacritic_score)) %>%
-  filter(!is.na(metacritic_score)) %>%
-  slice(1:5) %>%
-  select(album_name)
+data = taylor_album_songs
 
-# 2. Bottom 5 albums with lowest Metacritic score
-bottom_5_metacritic <- taylor_albums %>%
-  arrange(metacritic_score) %>%
-  filter(!is.na(metacritic_score)) %>% 
-  slice(1:5) %>% 
-  select(album_name)
+ggplot(data, aes(x = album_name, y = energy)) +
+  geom_boxplot() +
+  labs(title = "Energy Levels Grouped by Album Name", 
+       x = "Album Name", 
+       y = "Energy") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.5))+
+  theme(axis.text.x = element_text(size = 8, family = "mono", face = "bold", color = "black"))
 
-# 3. Top 5 albums with highest user score
-top_5_user <- taylor_albums %>%
-  arrange(desc(user_score)) %>%
-  filter(!is.na(user_score)) %>%  
-  slice(1:5) %>%
-  select(album_name)
+ggplot(data, aes(x = album_name, y = danceability)) +
+  geom_boxplot() +
+  labs(title = "Danceability Grouped by Album Name", 
+       x = "Album Name", 
+       y = "Danceability") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.5))+
+  theme(axis.text.x = element_text(size = 8, family = "mono", face = "bold", color = "black"))
 
-# 4. Bottom 5 albums with lowest user score
-bottom_5_user <- taylor_albums %>%
-  arrange(user_score) %>%
-  filter(!is.na(user_score)) %>%  
-  slice(1:5) %>% 
-  select(album_name)
+ggplot(data, aes(x = album_name, y = loudness)) +
+  geom_boxplot() +
+  labs(title = "loudness Grouped by Album Name", 
+       x = "Album Name", 
+       y = "Loudness") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.5))+
+  theme(axis.text.x = element_text(size = 8, family = "mono", face = "bold", color = "black"))
 
-# Find the intersection of top 5 Metacritic and top 5 user scores
-top_intersection <- top_5_metacritic %>%
-  semi_join(top_5_user, by = "album_name") %>%
-  slice(1:3) %>%
-  select(album_name)
+ggplot(data, aes(x = album_name, y = speechiness)) +
+  geom_boxplot() +
+  labs(title = "spechiness Grouped by Album Name", 
+       x = "Album Name", 
+       y = "Speechiness") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.5))+
+  theme(axis.text.x = element_text(size = 8, family = "mono", face = "bold", color = "black"))
 
-# Find the intersection of bottom 5 Metacritic and bottom 5 user scores
-bottom_intersection <- bottom_5_metacritic %>%
-  semi_join(bottom_5_user, by = "album_name") %>%
-  slice(1:3) %>%
-  select(album_name)
+ggplot(data, aes(x = album_name, y = acousticness)) +
+  geom_boxplot() +
+  labs(title = "acousticness Grouped by Album Name", 
+       x = "Album Name", 
+       y = "Accousticness") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.5))+
+  theme(axis.text.x = element_text(size = 8, family = "mono", face = "bold", color = "black"))
 
-# Print the intersections
-print(top_intersection)
-print(bottom_intersection)
+ggplot(data, aes(x = album_name, y = instrumentalness)) +
+  geom_boxplot() +
+  labs(title = "Instrumentalness Grouped by Album Name", 
+       x = "Album Name", 
+       y = "Instrumentalness") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.5))+
+  theme(axis.text.x = element_text(size = 8, family = "mono", face = "bold", color = "black"))
 
-# Top 3 are Red (Taylor's Version), folklore, evermore, 
-# Bottom 3 are reputation, Fearless, 1989
+ggplot(data, aes(x = album_name, y = liveness)) +
+  geom_boxplot() +
+  labs(title = "Liveness Grouped by Album Name", 
+       x = "Album Name", 
+       y = "Liveness") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.5))+
+  theme(axis.text.x = element_text(size = 8, family = "mono", face = "bold", color = "black"))
 
-# Note: Here we take into account both the metacritic_score and user_score for 
-# deciding which are top three and bottom three.
-```
+ggplot(data, aes(x = album_name, y = valence)) +
+  geom_boxplot() +
+  labs(title = "Valence Grouped by Album Name", 
+       x = "Album Name", 
+       y = "Valence") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0.5))+
+  theme(axis.text.x = element_text(size = 8, family = "mono", face = "bold", color = "black"))
 
-## Cleaning the data (Melisa)
-```{r}
-taylor_all_songs$artist <- ifelse(taylor_all_songs$album_name == "Beautiful Eyes",
-                                  "Taylor Swift", taylor_all_songs$artist)
-```
-```{r}
-album <- left_join(taylor_album_songs, taylor_albums, by = "album_name") %>%
-  select(album_name, ep = ep.x, album_release = album_release.x, track_number, track_name,
-         artist, featuring, bonus_track, single_release, track_release, danceability,
-         energy, key, loudness, mode, speechiness, acousticness, instrumentalness,
-         liveness, valence, tempo, time_signature, duration_ms, explicit, key_name,
-         mode_name, key_mode, metacritic_score, user_score)
-```
-
-## Checking Numerical Correlation (Kristine)
-```{r}
-
-```
-
-## Checking Categorical correlation (Sandrina)
-```{r}
 
 ```
 
-## Checking Logical correlation (Salman)
+
 ```{r}
-# The logical features are: ep, bonus_track, explicit
-# I think the logical correlation can't be computed for this dataset because the
-# score is based on albums and the features is based on songs, say I aggregate the
-# features for each album, then it will becomes numerical feature instead of categorical
-# Looking at the taylor_albums dataset, it's also impossible to do correlation test 
-# since the data for TRUE ep has missing value for metacritic score and user_score
+# Load your dataset
+data = taylor_album_songs
+
+# Select only the Spotify features of interest for correlation
+spotify_features <- data[, c("danceability", "energy", "loudness", "speechiness", 
+                             "acousticness", "instrumentalness", "valence", "liveness")]
+
+# Calculate the correlation matrix
+cor_matrix <- cor(spotify_features, use = "complete.obs")
+
+# Melt the correlation matrix for ggplot2
+melted_cor <- melt(cor_matrix)
+
+# Create the heatmap using ggplot2
+ggplot(melted_cor, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1, 1), space = "Lab", 
+                       name = "Correlation") +
+  theme_minimal() +
+  labs(title = "Correlation Heatmap of Spotify Features",
+       x = "Spotify Features",
+       y = "Spotify Features") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 10, hjust = 1))
+
+```
+
+
+```{r}
+# 1. Danceability vs Song Features
+ggplot(data, aes(x = danceability, y = as.factor(key), fill = as.factor(key))) +
+  geom_density_ridges(alpha = 0.7, scale = 1) +
+  labs(title = "Ridgeline Plot of Danceability by Key",
+       x = "Danceability",
+       y = "Key") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+ggplot(data, aes(x = danceability, y = as.factor(key_mode), fill = as.factor(key_mode))) +
+  geom_density_ridges(alpha = 0.7, scale = 1) +
+  labs(title = "Ridgeline Plot of Danceability by Key Mode",
+       x = "Danceability",
+       y = "Key Mode") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+ggplot(data, aes(x = danceability, y = key_name, fill = key_name)) +
+  geom_density_ridges(alpha = 0.7, scale = 1) +
+  labs(title = "Ridgeline Plot of Danceability by Key Name",
+       x = "Danceability",
+       y = "Key Name") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+# 2. Energy vs Song Features
+ggplot(data, aes(x = energy, y = as.factor(key), fill = as.factor(key))) +
+  geom_density_ridges(alpha = 0.7, scale = 1) +
+  labs(title = "Ridgeline Plot of Energy by Key",
+       x = "Energy",
+       y = "Key") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+ggplot(data, aes(x = energy, y = as.factor(key_mode), fill = as.factor(key_mode))) +
+  geom_density_ridges(alpha = 0.7, scale = 1) +
+  labs(title = "Ridgeline Plot of Energy by Key Mode",
+       x = "Energy",
+       y = "Key Mode") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+ggplot(data, aes(x = energy, y = key_name, fill = key_name)) +
+  geom_density_ridges(alpha = 0.7, scale = 1) +
+  labs(title = "Ridgeline Plot of Energy by Key Name",
+       x = "Energy",
+       y = "Key Name") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+# 3. Loudness vs Song Features
+ggplot(data, aes(x = loudness, y = as.factor(key), fill = as.factor(key))) +
+  geom_density_ridges(alpha = 0.7, scale = 1) +
+  labs(title = "Ridgeline Plot of Loudness by Key",
+       x = "Loudness",
+       y = "Key") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+# You can continue similarly for the rest of the combinations of song features (key, key_mode, key_name)
+# and Spotify features (speechiness, acousticness, instrumentalness, liveness, valence)
+
+
+
+
+
 ```
 
