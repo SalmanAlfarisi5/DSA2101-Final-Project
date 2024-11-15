@@ -1,0 +1,410 @@
+---
+title: "DSA2101 Group Project"
+author: "Yixuan, Sandrina, Michelle, Melisa, Salman"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, include = TRUE,
+                      fig.align = "center",  out.width = "80%")
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(gridExtra) 
+library(reshape2)
+library(gganimate)
+library(glue)
+library(ggradar)
+# Disable scientific notation
+options(scipen = 999)
+```
+# What trends can be observed in the evolution of musical characteristics across Taylor Swift’s various albums over time?
+
+# Introduction
+
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;"> 
+With the release of *The Eras Tour* film, the “taylor” R package curated by W. Jake Thompson provides an in-depth view of Taylor Swift’s discography, featuring lyrics and audio characteristics data sourced from Genius and Spotify APIs. It includes three main datasets: “taylor_album_songs,” featuring all tracks from her official studio albums while excluding standalone singles and original album versions replaced by *Taylor’s Version*; “taylor_all_songs,” which covers her entire discography, including EPs, individual singles, and re-releases; and “taylor_albums,” summarising her album release history. 
+</div> 
+
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;"> 
+These datasets present a unique opportunity to explore Swift's music on multiple levels, from lyrical themes to evolving audio characteristics. Each dataset includes many features, allowing in-depth analyses of her stylistic shifts and emotional tones across albums. Through this report, we aim to investigate how Swift’s music has evolved across albums over time, considering factors like energy, loudness, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and danceability. This exploration will help us understand the patterns within her discography and the elements that make her music resonate deeply with her audience.
+</div> 
+
+# Data Cleaning and Summary
+
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;">
+To begin, we conducted data cleaning across three primary datasets: “taylor_album_songs”, “taylor_all_songs”, “and taylor_albums”. Despite some missing values, we retained these entries to preserve the integrity and completeness of the dataset. For example, a missing value under the “featuring” column signifies a solo performance by Taylor Swift, not incomplete or unreliable data. Next, we examined the uniqueness of each dataset, which was essential before merging. Uniqueness was established based on “track_name” for both “taylor_album_songs” and “taylor_all_songs”, while “album_name” ensured uniqueness for “taylor_albums”. All rows were unique in each dataset except for “taylor_all_songs”, where the track “I'm Only Me When I'm With You” appears twice. Further examination confirmed that this track exists on two different albums.
+</div>
+
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;">
+We also compared album names across datasets to identify any inconsistencies. Using an anti-join operation, we identified that the albums Beautiful Eyes, Fearless, Red, and The Taylor Swift Holiday Collection are missing from taylor_album_songs. Additionally, songs with missing album names are confirmed as non-album tracks, such as soundtracks or singles. For songs in the Beautiful Eyes album, which had incomplete entries, we utilised available metadata (such as the “artist” column) to update missing values, ensuring consistency with other records by assigning “Taylor Swift” to the missing artist entries. Lastly, we merged "taylor_album_songs" with "taylor_albums" using a left join on the “album_name” column. This approach allowed us to retain all essential album information while focusing on tracks within Swift's albums, which aligns with the objective of this report. With this final join, the dataset was structured and prepared for visual analysis.
+</div> 
+
+### Reading the data
+```{r}
+# install.packages("tidytuesdayR")
+
+tuesdata <- tidytuesdayR::tt_load('2023-10-17')
+
+taylor_album_songs <- tuesdata$taylor_album_songs
+taylor_all_songs <- tuesdata$taylor_all_songs
+taylor_albums <- tuesdata$taylor_albums
+```
+
+### Checking the features of data
+```{r}
+glimpse(taylor_album_songs)
+glimpse(taylor_all_songs)
+glimpse(taylor_albums)
+```
+
+### Checking albums
+```{r}
+# Checking the number of albums in each dataset
+taylor_album_songs %>% count(album_name)
+taylor_all_songs %>% count(album_name)
+
+# Anti-join to check which albums occur in one of the datasets only
+anti_join(taylor_all_songs, taylor_album_songs, by = "album_name")
+anti_join(taylor_all_songs, taylor_album_songs, by = "album_name") %>% count(album_name)
+# album_name Beautiful Eyes, Fearless, Red, and The Taylor Swift Holiday Collection are not in taylor_album_songs
+# songs with album_name=NA means that the songs are not in any album
+# songs in Beautiful Eyes have a lot of missing data
+```
+
+### Checking duplicate rows
+```{r}
+taylor_album_songs %>% count(track_name) %>% filter(n > 1)
+taylor_all_songs %>% count(track_name) %>% filter(n > 1)
+
+# the song appears in Taylor Swift and Beautiful Eyes album but with different years
+taylor_all_songs %>% filter(track_name %in% "I'm Only Me When I'm With You")
+
+```
+
+### Handling missing data
+```{r}
+# Change artist = NA to artist = "Taylor Swift" in taylor_all_songs, for album_name = Beautiful Eyes
+taylor_all_songs$artist <- ifelse(taylor_all_songs$album_name == "Beautiful Eyes",
+                                  "Taylor Swift", taylor_all_songs$artist)
+```
+
+### Joining dataset
+```{r}
+# Joining by album for taylor_album_songs and taylor_albums
+album <- left_join(taylor_album_songs, taylor_albums, by = "album_name") %>%
+  select(album_name, ep = ep.x, album_release = album_release.x, track_number, track_name,
+         artist, featuring, bonus_track, single_release, track_release, danceability,
+         energy, key, loudness, mode, speechiness, acousticness, instrumentalness,
+         liveness, valence, tempo, time_signature, duration_ms, explicit, key_name,
+         mode_name, key_mode, metacritic_score, user_score)
+glimpse(album)
+```
+
+### See the correlation between each feature
+```{r}
+# Select only numerical features for correlation analysis
+numeric_features <- album %>%
+  select(danceability, energy, loudness, speechiness, acousticness, instrumentalness, 
+         liveness, valence, tempo)
+
+# Compute the correlation matrix
+cor_matrix <- cor(numeric_features, use = "complete.obs")
+
+# Melt the correlation matrix into long format for ggplot2
+melted_cor_matrix <- melt(cor_matrix)
+
+# Create a heatmap using ggplot2 with a red-blue colour palette
+ggplot(melted_cor_matrix, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue", 
+                       midpoint = 0, limit = c(-1, 1), 
+                       space = "Lab", name="Correlation") +  # Red for negative, blue for positive
+  geom_text(aes(label = round(value, 2)), color = "white", size = 3) +  # Add correlation values as text
+  labs(title = "Heatmap of Feature Correlations",
+       x = "Features",
+       y = "Features",
+       fill = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+```
+
+# Visualisation
+
+### Energy vs Loudness by Year Group Scatter Plot
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;">
+Based on the heatmap analysis, we observed a relatively high correlation between the loudness and energy features compared to other musical characteristics. This finding prompted us to explore how this correlation between loudness and energy has evolved over different periods in Taylor Swift's career. By grouping the data into distinct year intervals, we aimed to uncover any potential shifts in the relationship between these two features across her discography. Our analysis uses scatter plots with LOESS trendlines and correlation coefficients to visualise and quantify this relationship over time. This approach allows us to detect changes in the intensity and dynamism of her music, as loudness reflects volume while energy captures the overall activity level of a track. 
+</div>
+```{r}
+# Convert track_release to Date format and extract the year
+album$track_release <- as.Date(album$track_release)
+album$year_group <- cut(album$track_release, 
+                        breaks = as.Date(c("2005-01-01", "2010-01-01", "2015-01-01", "2020-01-01", "2025-01-01")),
+                        labels = c("2006-2009", "2010-2014", "2015-2019", "2020-2024"))
+
+# Function to calculate the correlation coefficient for each year group
+get_correlation <- function(album, x, y) {
+  album %>%
+    group_by(year_group) %>%
+    summarize(correlation = round(cor(.data[[x]], .data[[y]], use = "complete.obs"), 2))
+}
+
+# Calculate correlation coefficients for energy vs loudness
+correlations <- get_correlation(album, "loudness", "energy")
+
+# Merge correlations back into the original data
+album <- merge(album, correlations, by = "year_group")
+
+# Create a scatter plot with LOESS lines and 95% confidence intervals for energy vs loudness
+ggplot(album, aes(x = loudness, y = energy)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = TRUE, color = "red") +
+  facet_wrap(~ year_group) +
+  
+  # Add correlation coefficient as a text annotation for each year group
+  geom_text(data = correlations, aes(label = sprintf("r = %.2f", correlation), x = -12, y = 0.9), 
+            inherit.aes = FALSE, size = 3.7, color = "blue") + 
+  labs(title = "Energy vs Loudness by Year Group",
+       subtitle = "r represents the correlation coefficient between energy and loudness",
+       x = "Loudness",
+       y = "Energy",
+       caption = "The grey band represents the 95% confidence interval around the LOESS trendline.") +
+  theme_minimal()
+
+```
+
+### Taylor Swift's Musical Key Evolution Keyboard Heatmap
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;">
+This visualisation uses an animated keyboard plot to showcase the distribution of Taylor Swift's songs by musical key across her album releases. Each key on the piano keyboard (with both white keys—C, D, E, F, G, A, B—and black keys—C#, D#, F#, G#, A#—positioned as they appear on a traditional piano) represents a different musical key. The plot dynamically displays the percentage of Taylor Swift’s songs in each key, with a colour gradient applied to the keys to indicate the proportion of songs in that key for each album.
+As the animation progresses through Taylor Swift's discography, viewers can observe how her choice of musical keys has evolved over time with each album release. This visualisation is particularly effective because the familiar keyboard layout intuitively represents the concept of musical keys, making it easy to see which keys are most prevalent in her music at any given time. The colour gradient further enhances the clarity by visually representing the percentage of songs in each key, offering a deeper insight into the stylistic shifts in her music.
+By animating the plot across her albums, we can track how the distribution of keys has changed. This shift in the use of musical keys could reflect changes in the mood, tone, or style of her music over time, providing valuable insights into how Taylor Swift’s musical preferences and sound have developed throughout her career. 
+</div>
+```{r}
+# Create a unique album_names data frame with the album name and modified album release date
+album_names <- album %>% 
+  select(album_name, album_release) %>% 
+  unique() %>%
+  mutate(album_release_name = paste(album_release, album_name, sep = " - "))  # Combine date and album name
+
+# Calculate the percentage of songs by key
+key_distribution <- album %>%
+  group_by(key_name, album_release) %>%
+  summarize(count = n()) %>%
+  mutate(percentage = (count / sum(count, na.rm = TRUE)) * 100) %>%
+  na.omit()
+
+# Join modified album names with key distribution
+key_distribution <- left_join(key_distribution, album_names, by = "album_release") %>%
+  select(-album_release) %>%
+  rename(album_release = album_release_name)
+
+
+# Define the positions for white and black keys on a piano
+white_keys <- c("C", "D", "E", "F", "G", "A", "B")
+black_keys <- c("C#", "D#", "F#", "G#", "A#")
+
+# Define positions for keys on the keyboard (x-axis)
+key_positions <- data.frame(
+  key_name = c(white_keys, black_keys),
+  position = c(1, 2, 3, 4, 5, 6, 7, 1.5, 2.5, 4.5, 5.5, 6.5) # Black keys centered between white keys
+)
+
+dfcur <- NULL
+for (y in sort(unique(key_distribution$album_release))){
+  temp = key_distribution %>%
+    filter(album_release == y) %>%
+    full_join(key_positions,  by = "key_name") %>%
+    replace_na(list(count = 0, percentage = 0))
+  temp$album_release = y
+  dfcur <- rbind(dfcur, temp)
+}
+dfcur$album_release = factor(dfcur$album_release, ordered = T,
+                             levels = sort(unique(dfcur$album_release)))
+key_distribution <- dfcur
+
+# Create a custom keyboard plot
+animated_plot <- ggplot() +
+  
+  # White keys (rectangles side by side with no gaps)
+  geom_rect(data = key_distribution %>% filter(key_name %in% white_keys),
+            aes(xmin = position - 0.5, xmax = position + 0.5,
+                ymin = -0.3, ymax = 0.8), fill = "#FFFFFF", color = "#000000") +
+  
+  # Black keys (rectangles centred on top of white keys)
+  geom_rect(data = key_distribution %>% filter(key_name %in% black_keys),
+            aes(xmin = position - 0.25, xmax = position + 0.25,
+                ymin = 0.1, ymax = 0.8), fill = "#000000") +
+  
+  # Add text labels for white keys with gradient colour based on percentage and white text
+  geom_label(data = key_distribution %>% filter(key_name %in% white_keys),
+             aes(x = position, y = -0.5,
+                 label = key_name,
+                 fill = percentage), color = "#FFFFFF", size = 6.7) + # White text for contrast
+  
+  # Add text labels for black keys with gradient colour based on percentage and black text
+  geom_label(data = key_distribution %>% filter(key_name %in% black_keys),
+             aes(x = position, y = 0.325,
+                 label = key_name,
+                 fill = percentage), color = "#000000", size = 6) + # Black text for contrast
+  
+  # Use viridis colour scale for percentage gradient
+  scale_fill_viridis_c(option = "plasma", direction = -1) +
+  
+  # Adjust plot limits and remove axis labels/ticks to resemble a keyboard
+  scale_y_continuous(limits = c(-2, NA)) +
+  
+  # Dynamically update the title using glue for each frame
+  labs(title = "Taylor Swift's Musical Key Evolution", subtitle = "{closest_state} - Percentage of Songs by Key",
+       x = NULL,
+       y = NULL,
+       fill = "% of Songs") +
+  
+  theme_void() +   # Remove axis lines and ticks
+  theme(legend.position="top") +
+  
+  # Animate over album_release
+  transition_states(album_release) +
+  enter_fade() + exit_fly(y_loc = 1)
+
+# Save the animation as a GIF
+animate(animated_plot, duration = 10, fps = 1, renderer = av_renderer())
+```
+
+### Taylor Swift's Top 2 and Bottom 2 Albums Musical Feature Distribution Radar Chart
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;">
+The radar chart in this visualisation allows us to compare key musical features (e.g., danceability, energy, loudness, speechiness, acousticness, instrumentalness, liveness, valence, and tempo) across Taylor Swift's top and bottom albums based on critical and user ratings. By normalizing values like loudness and tempo, we normalize each feature on a scale from 0 to 1, making it easier to see variations across different dimensions for each album. Radar charts are useful here because they display multiple variables in a circular layout, making it straightforward to compare feature distributions and see which attributes are prominent or minimal in different albums. By including both top and low-ranked albums, the chart provides a clear visual representation of how musical attributes fluctuate.
+</div>
+
+```{r}
+# Aggregate the data by album, calculating the mean for each feature
+album_data <- album %>%
+  mutate(album_name = paste(album_name, "-", year(album_release))) %>%
+  group_by(album_name) %>%
+  select(-c(key,mode)) %>%
+  summarize(
+    metacritic = first(metacritic_score),
+    user_score = first(user_score),
+    across(danceability:tempo, function(x) mean(x, na.rm = TRUE))
+  )
+
+# Add Rank based on the average of metacritic and user_score
+album_data <- album_data %>%
+  mutate(
+    avg_score = (metacritic + user_score*10) / 2, 
+    rank = ntile(avg_score, 10)
+  ) %>%
+  select(-avg_score, -metacritic, -user_score) 
+
+# Normalize loudness, tempo, and instrumentalness
+album_data <- album_data %>%
+  mutate(
+    loudness = (loudness - min(loudness, na.rm = TRUE)) / (max(loudness, na.rm = TRUE) - min(loudness, na.rm = TRUE)),
+    tempo = (tempo - min(tempo, na.rm = TRUE)) / (max(tempo, na.rm = TRUE) - min(tempo, na.rm = TRUE)),
+    instrumentalness = -1/log(instrumentalness + 1e-6),
+    instrumentalness = (instrumentalness - min(instrumentalness, na.rm = TRUE)) / (max(instrumentalness, na.rm = TRUE) - min(instrumentalness, na.rm = TRUE))  
+  )
+
+# Add max and min rows for scaling in the radar chart
+max_min <- data.frame(
+  album_name = c("max", "min"),
+  danceability = c(1, 0),
+  energy = c(1, 0),
+  loudness = c(1, 0),
+  speechiness = c(1, 0),
+  acousticness = c(1, 0),
+  instrumentalness = c(1, 0),
+  liveness = c(1, 0),
+  valence = c(1, 0),
+  tempo = c(1, 0)
+)
+
+# Combine max/min rows with album data
+album_data <- bind_rows(max_min, album_data)
+
+# Rename album_name to group for compatibility with ggradar
+album_data <- album_data %>%
+  rename(group = album_name)  
+
+# Filter top 2 and bottom 2 albums based on rank
+top_2 <- album_data %>% slice_min(order_by = rank, n = 2)
+bottom_2 <- album_data %>% slice_max(order_by = rank, n = 2)
+
+# Combine the top 2 and bottom 2 albums
+selected_albums <- bind_rows(top_2, bottom_2)
+
+# Modify album names to include rank
+selected_albums <- selected_albums %>%
+  mutate(group = paste0(group, " (Rank ", rank, ")"))
+
+# Remove the rank column before plotting
+selected_albums <- selected_albums %>% select(-rank)
+
+# Define a colour palette for the selected albums
+palette_colors <- c("#1f77b4", "#d62728", "#8A2BE2", "#2ca02c")
+
+# Plot the radar chart for all selected albums in a single chart
+ggradar(selected_albums,
+        axis.label.size = 3,
+        grid.label.size = 3,
+        group.point.size = 3,
+        group.line.width = 1,             
+        background.circle.colour = "white",
+        axis.line.colour = "gray60",
+        gridline.min.colour = "gray60",
+        gridline.mid.colour = "gray60",
+        gridline.max.colour = "gray60",
+        group.colours = palette_colors,  
+        plot.legend = TRUE) + 
+  ggtitle("Taylor Swift's Top 2 and Bottom 2 Albums Musical Feature Distribution") +
+  theme_minimal() +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    legend.title = element_blank()
+  )
+```
+
+# Discussion
+### Energy vs Loudness by Year Group Scatter Plot
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;"> 
+The scatter plot of energy versus loudness by year group shows a positive correlation between these two musical characteristics across Taylor Swift’s discography. The correlation coefficient (r) values reveal a strong and consistent relationship, highlighting how Taylor Swift’s music achieves a balance between intensity and volume in different eras. In her early years (2006-2009), the close alignment of loudness with energy reflects a raw, acoustic-driven style. As her music evolved (2010-2014), the correlation slightly weakened, likely due to her shift from country to pop and experimentation with new sounds. From 2015 onward, the correlation strengthened again, reflecting polished pop production in albums like “1989” and “Reputation” and, more recently, the controlled energy of “Folklore” and “Evermore”. This pattern shows how Taylor Swift maintains her appeal through adaptable yet consistently high-energy production. The LOESS trendlines and confidence intervals further illustrate this steady relationship, highlighting an increased intensity in her music over time.
+</div>
+
+### Taylor Swift's Musical Key Evolution Keyboard Heatmap
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;"> 
+This animated keyboard plot visualises the distribution of musical keys across Taylor Swift's albums. Each piano key represents a different musical key, with a colour gradient highlighting the percentage of songs in that key per album. As the animation progresses, viewers can observe how Taylor’s choice of keys evolves, suggesting shifts in mood, tone, and style over time. Early albums, like Taylor Swift and Speak Now, feature keys such as G# and A# Major, capturing youthful optimism and emotional discovery. As her music matures in 1989 and Reputation, she moves into keys like D# and A Major, adding emotional depth, tension, and triumph as she navigates fame and self-reflection. Folklore and evermore mark a shift toward introspective storytelling, using a broader range of keys to explore themes of nostalgia and bittersweet triumph—particularly with F# Major in evermore, which underscores resilience and growth. In Lover, B Major introduces joy and hope, while Fearless (Taylor’s Version) revisits keys like F# Major and G Major to blend past and present emotions of love and empowerment. With Midnights, G# Major returns, now with a mature, introspective tone. These choices illustrate Swift’s artistic evolution, using keys as emotional markers that add depth to her themes of growth, heartbreak, and personal empowerment over time.
+</div>
+
+### Taylor Swift's Top 2 and Bottom 2 Albums Musical Feature Distribution Radar Chart
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;">
+The radar chart highlights trends in musical features across Taylor Swift’s top 2 and bottom 2 albums, ranked by user and Metacritic scores. Top-ranked albums show higher energy, danceability, and tempo, reflecting a shift toward upbeat, rhythm-driven tracks, while lower-ranked albums emphasize acousticness and lower energy, suggesting a more subdued tone. Taylor’s recent subdued albums appear less well-received compared to her earlier, upbeat works. Notably, rank 1 and rank 10 albums have similar charts, with loudness being similar suggesting other factors may impact the score more than the musical features. Based on the analysis of her top 2 albums, Taylor Swift has a high loudness, matching its vibrant style, while Reputation leads in danceability, marking her pop era. In contrast, looking at her bottom 2 albums, Folklore focuses on acousticness, potentially explaining its lower score. Red (Taylor’s Version) has potential biases as a re-release and reflects mixed energy due to its blend of upbeat and acoustic tracks. This suggests that as Taylor Swift's music evolves from energetic pop to subdued acousticness, the audience rating tends to trend downwards. Even so, this does not rule out the possibility that musical features alone may not fully determine ratings.
+</div>
+
+
+
+### Summary
+<div style="text-align: justify; text-indent: 2em; margin-bottom: 1em;"> 
+The three visualisations collectively highlight key trends in Taylor Swift’s musical evolution. The scatter plot shows a consistent positive correlation between energy and loudness across different periods, indicating that as her songs become louder, they also tend to become more energetic. This trend reflects production choices that amplify the energy in her music across various genres. The animated keyboard plot highlights the broad range of musical keys used across her albums, highlighting Taylor’s versatility and the thematic variation throughout her discography. Certain keys become more prominent at different points in her career, potentially reflecting the personal themes and emotions she was navigating at the time, from optimism to introspection. The radar chart compares musical attributes in Taylor’s top two and bottom two albums, based on user and Metacritic scores, providing insight into how specific features relate to album reception. Higher-ranked albums suggest a preference for upbeat, dynamic tracks in more popular works. In contrast, lower-ranked albums contribute to a more subdued tone. Loudness remains relatively high across both top and bottom albums, hinting those factors beyond loudness—such as lyrical themes or emotional resonance—may strongly influence ratings. Together, these patterns illustrate Taylor Swift’s musical evolution throughout time.
+</div>
+
+
+# Teamwork
+As the primary focus of this project is on the three visualisations, we divided the coding tasks as follows:
+
+1. **Scatter Plot**: Melisa and Muhammad Salman  
+2. **Keyboard Heatmap**: Yixuan  
+3. **Radar Chart**: Michelle and Sandrina  
+
+For the written report, Michelle was responsible for the introduction, and Melissa covered the data cleaning process. The other three team members would each write the discussion for their assigned visualisations.
+
+# References
+1. https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-10-17/readme.md 
+2. https://gganimate.com/ 
+3. https://github.com/ricardo-bion/ggradar 

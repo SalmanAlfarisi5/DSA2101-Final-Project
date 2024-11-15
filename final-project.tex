@@ -108,7 +108,7 @@
 
 \title{Final Project}
 \author{Muhammad Salman Al Farisi}
-\date{2024-11-04}
+\date{2024-11-13}
 
 \begin{document}
 \maketitle
@@ -124,30 +124,39 @@
 \FunctionTok{library}\NormalTok{(tidyr)}
 \FunctionTok{library}\NormalTok{(viridis)}
 \FunctionTok{library}\NormalTok{(gridExtra) }
+\FunctionTok{library}\NormalTok{(gifski)}
 \FunctionTok{library}\NormalTok{(reshape2)}
 \FunctionTok{library}\NormalTok{(ggridges)}
+\FunctionTok{library}\NormalTok{(gganimate)}
+\FunctionTok{library}\NormalTok{(glue)}
+\FunctionTok{library}\NormalTok{(shiny)}
+\FunctionTok{library}\NormalTok{(ggedit)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{taylor\_album\_songs }\OtherTok{\textless{}{-}}\NormalTok{ readr}\SpecialCharTok{::}\FunctionTok{read\_csv}\NormalTok{(}\StringTok{\textquotesingle{}https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023{-}10{-}17/taylor\_album\_songs.csv\textquotesingle{}}\NormalTok{)}
-\NormalTok{taylor\_all\_songs }\OtherTok{\textless{}{-}}\NormalTok{ readr}\SpecialCharTok{::}\FunctionTok{read\_csv}\NormalTok{(}\StringTok{\textquotesingle{}https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023{-}10{-}17/taylor\_all\_songs.csv\textquotesingle{}}\NormalTok{)}
-\NormalTok{taylor\_albums }\OtherTok{\textless{}{-}}\NormalTok{ readr}\SpecialCharTok{::}\FunctionTok{read\_csv}\NormalTok{(}\StringTok{\textquotesingle{}https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023{-}10{-}17/taylor\_albums.csv\textquotesingle{}}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
+\NormalTok{tuesdata }\OtherTok{\textless{}{-}}\NormalTok{ tidytuesdayR}\SpecialCharTok{::}\FunctionTok{tt\_load}\NormalTok{(}\StringTok{\textquotesingle{}2023{-}10{-}17\textquotesingle{}}\NormalTok{)}
 
-\begin{Shaded}
-\begin{Highlighting}[]
+\NormalTok{taylor\_album\_songs }\OtherTok{\textless{}{-}}\NormalTok{ tuesdata}\SpecialCharTok{$}\NormalTok{taylor\_album\_songs}
+\NormalTok{taylor\_all\_songs }\OtherTok{\textless{}{-}}\NormalTok{ tuesdata}\SpecialCharTok{$}\NormalTok{taylor\_all\_songs}
+\NormalTok{taylor\_albums }\OtherTok{\textless{}{-}}\NormalTok{ tuesdata}\SpecialCharTok{$}\NormalTok{taylor\_albums}
+
+
 \NormalTok{data }\OtherTok{=}\NormalTok{ taylor\_album\_songs}
+\end{Highlighting}
+\end{Shaded}
 
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ album\_name, }\AttributeTok{y =}\NormalTok{ energy)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Energy Levels Grouped by Album Name"}\NormalTok{, }
-       \AttributeTok{x =} \StringTok{"Album Name"}\NormalTok{, }
-       \AttributeTok{y =} \StringTok{"Energy"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \SpecialCharTok{{-}}\DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{))}\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{, }\AttributeTok{family =} \StringTok{"mono"}\NormalTok{, }\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{taylor\_album\_songs }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(album\_name }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"folklore"}\NormalTok{, }\StringTok{"reputation"}\NormalTok{, }\StringTok{"Taylor Swift"}\NormalTok{, }\StringTok{"Red (Taylor\textquotesingle{}s Version)"}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ loudness, }\AttributeTok{y =}\NormalTok{ energy)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_point}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ album\_name), }\AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{) }\SpecialCharTok{+}  
+    \FunctionTok{geom\_smooth}\NormalTok{(}\AttributeTok{method =} \StringTok{"lm"}\NormalTok{, }\AttributeTok{se =} \ConstantTok{FALSE}\NormalTok{, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ album\_name)) }\SpecialCharTok{+}  
+    \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{album\_name) }\SpecialCharTok{+} 
+    \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Loudness vs Energy by Album"}\NormalTok{, }\AttributeTok{x =} \StringTok{"Loudness"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Energy"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }
 \end{Highlighting}
 \end{Shaded}
 
@@ -155,253 +164,47 @@
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ album\_name, }\AttributeTok{y =}\NormalTok{ danceability)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Danceability Grouped by Album Name"}\NormalTok{, }
-       \AttributeTok{x =} \StringTok{"Album Name"}\NormalTok{, }
-       \AttributeTok{y =} \StringTok{"Danceability"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \SpecialCharTok{{-}}\DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{))}\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{, }\AttributeTok{family =} \StringTok{"mono"}\NormalTok{, }\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
+\CommentTok{\# Define UI for album selection and plot output}
+\NormalTok{ui }\OtherTok{\textless{}{-}} \FunctionTok{fluidPage}\NormalTok{(}
+  \FunctionTok{titlePanel}\NormalTok{(}\StringTok{"Loudness vs. Energy by Album"}\NormalTok{),}
+  \FunctionTok{sidebarLayout}\NormalTok{(}
+    \FunctionTok{sidebarPanel}\NormalTok{(}
+      \FunctionTok{selectInput}\NormalTok{(}\StringTok{"album"}\NormalTok{, }\StringTok{"Choose an Album:"}\NormalTok{, }
+                  \AttributeTok{choices =} \FunctionTok{unique}\NormalTok{(data}\SpecialCharTok{$}\NormalTok{album\_name),}
+                  \AttributeTok{selected =} \FunctionTok{unique}\NormalTok{(data}\SpecialCharTok{$}\NormalTok{album\_name)[}\DecValTok{1}\NormalTok{])}
+\NormalTok{    ),}
+    \FunctionTok{mainPanel}\NormalTok{(}
+      \FunctionTok{plotOutput}\NormalTok{(}\StringTok{"loudnessEnergyPlot"}\NormalTok{)}
+\NormalTok{    )}
+\NormalTok{  )}
+\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-3-2.pdf}
-
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ album\_name, }\AttributeTok{y =}\NormalTok{ loudness)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"loudness Grouped by Album Name"}\NormalTok{, }
-       \AttributeTok{x =} \StringTok{"Album Name"}\NormalTok{, }
-       \AttributeTok{y =} \StringTok{"Loudness"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \SpecialCharTok{{-}}\DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{))}\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{, }\AttributeTok{family =} \StringTok{"mono"}\NormalTok{, }\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
+\CommentTok{\# Define server logic to plot loudness vs energy based on album selection}
+\NormalTok{server }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(input, output) \{}
+\NormalTok{  output}\SpecialCharTok{$}\NormalTok{loudnessEnergyPlot }\OtherTok{\textless{}{-}} \FunctionTok{renderPlot}\NormalTok{(\{}
+\NormalTok{    filtered\_data }\OtherTok{\textless{}{-}}\NormalTok{ data }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(album\_name }\SpecialCharTok{==}\NormalTok{ input}\SpecialCharTok{$}\NormalTok{album)}
+    
+\NormalTok{    plot }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(filtered\_data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ loudness, }\AttributeTok{y =}\NormalTok{ energy)) }\SpecialCharTok{+}
+      \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+      \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \FunctionTok{paste}\NormalTok{(}\StringTok{"Loudness vs Energy for Album:"}\NormalTok{, input}\SpecialCharTok{$}\NormalTok{album),}
+           \AttributeTok{x =} \StringTok{"Loudness"}\NormalTok{,}
+           \AttributeTok{y =} \StringTok{"Energy"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{theme\_minimal}\NormalTok{()}
+    
+    \FunctionTok{ggedit}\NormalTok{(plot)}
+\NormalTok{  \})}
+\NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-3-3.pdf}
-
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ album\_name, }\AttributeTok{y =}\NormalTok{ speechiness)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"spechiness Grouped by Album Name"}\NormalTok{, }
-       \AttributeTok{x =} \StringTok{"Album Name"}\NormalTok{, }
-       \AttributeTok{y =} \StringTok{"Speechiness"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \SpecialCharTok{{-}}\DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{))}\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{, }\AttributeTok{family =} \StringTok{"mono"}\NormalTok{, }\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-3-4.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ album\_name, }\AttributeTok{y =}\NormalTok{ acousticness)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"acousticness Grouped by Album Name"}\NormalTok{, }
-       \AttributeTok{x =} \StringTok{"Album Name"}\NormalTok{, }
-       \AttributeTok{y =} \StringTok{"Accousticness"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \SpecialCharTok{{-}}\DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{))}\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{, }\AttributeTok{family =} \StringTok{"mono"}\NormalTok{, }\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-3-5.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ album\_name, }\AttributeTok{y =}\NormalTok{ instrumentalness)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Instrumentalness Grouped by Album Name"}\NormalTok{, }
-       \AttributeTok{x =} \StringTok{"Album Name"}\NormalTok{, }
-       \AttributeTok{y =} \StringTok{"Instrumentalness"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \SpecialCharTok{{-}}\DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{))}\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{, }\AttributeTok{family =} \StringTok{"mono"}\NormalTok{, }\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-3-6.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ album\_name, }\AttributeTok{y =}\NormalTok{ liveness)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Liveness Grouped by Album Name"}\NormalTok{, }
-       \AttributeTok{x =} \StringTok{"Album Name"}\NormalTok{, }
-       \AttributeTok{y =} \StringTok{"Liveness"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \SpecialCharTok{{-}}\DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{))}\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{, }\AttributeTok{family =} \StringTok{"mono"}\NormalTok{, }\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-3-7.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ album\_name, }\AttributeTok{y =}\NormalTok{ valence)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Valence Grouped by Album Name"}\NormalTok{, }
-       \AttributeTok{x =} \StringTok{"Album Name"}\NormalTok{, }
-       \AttributeTok{y =} \StringTok{"Valence"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \SpecialCharTok{{-}}\DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{0.5}\NormalTok{))}\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{, }\AttributeTok{family =} \StringTok{"mono"}\NormalTok{, }\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-3-8.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{\# Load your dataset}
-\NormalTok{data }\OtherTok{=}\NormalTok{ taylor\_album\_songs}
-
-\CommentTok{\# Select only the Spotify features of interest for correlation}
-\NormalTok{spotify\_features }\OtherTok{\textless{}{-}}\NormalTok{ data[, }\FunctionTok{c}\NormalTok{(}\StringTok{"danceability"}\NormalTok{, }\StringTok{"energy"}\NormalTok{, }\StringTok{"loudness"}\NormalTok{, }\StringTok{"speechiness"}\NormalTok{, }
-                             \StringTok{"acousticness"}\NormalTok{, }\StringTok{"instrumentalness"}\NormalTok{, }\StringTok{"valence"}\NormalTok{, }\StringTok{"liveness"}\NormalTok{)]}
-
-\CommentTok{\# Calculate the correlation matrix}
-\NormalTok{cor\_matrix }\OtherTok{\textless{}{-}} \FunctionTok{cor}\NormalTok{(spotify\_features, }\AttributeTok{use =} \StringTok{"complete.obs"}\NormalTok{)}
-
-\CommentTok{\# Melt the correlation matrix for ggplot2}
-\NormalTok{melted\_cor }\OtherTok{\textless{}{-}} \FunctionTok{melt}\NormalTok{(cor\_matrix)}
-
-\CommentTok{\# Create the heatmap using ggplot2}
-\FunctionTok{ggplot}\NormalTok{(melted\_cor, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Var1, }\AttributeTok{y =}\NormalTok{ Var2, }\AttributeTok{fill =}\NormalTok{ value)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_tile}\NormalTok{(}\AttributeTok{color =} \StringTok{"white"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{scale\_fill\_gradient2}\NormalTok{(}\AttributeTok{low =} \StringTok{"blue"}\NormalTok{, }\AttributeTok{high =} \StringTok{"red"}\NormalTok{, }\AttributeTok{mid =} \StringTok{"white"}\NormalTok{, }
-                       \AttributeTok{midpoint =} \DecValTok{0}\NormalTok{, }\AttributeTok{limit =} \FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{), }\AttributeTok{space =} \StringTok{"Lab"}\NormalTok{, }
-                       \AttributeTok{name =} \StringTok{"Correlation"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Correlation Heatmap of Spotify Features"}\NormalTok{,}
-       \AttributeTok{x =} \StringTok{"Spotify Features"}\NormalTok{,}
-       \AttributeTok{y =} \StringTok{"Spotify Features"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \DecValTok{1}\NormalTok{, }
-                                   \AttributeTok{size =} \DecValTok{10}\NormalTok{, }\AttributeTok{hjust =} \DecValTok{1}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-4-1.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{\# 1. Danceability vs Song Features}
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ danceability, }\AttributeTok{y =} \FunctionTok{as.factor}\NormalTok{(key), }\AttributeTok{fill =} \FunctionTok{as.factor}\NormalTok{(key))) }\SpecialCharTok{+}
-  \FunctionTok{geom\_density\_ridges}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{, }\AttributeTok{scale =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Ridgeline Plot of Danceability by Key"}\NormalTok{,}
-       \AttributeTok{x =} \StringTok{"Danceability"}\NormalTok{,}
-       \AttributeTok{y =} \StringTok{"Key"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{, }
-        \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \DecValTok{1}\NormalTok{),}
-        \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-5-1.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ danceability, }\AttributeTok{y =} \FunctionTok{as.factor}\NormalTok{(key\_mode), }\AttributeTok{fill =} \FunctionTok{as.factor}\NormalTok{(key\_mode))) }\SpecialCharTok{+}
-  \FunctionTok{geom\_density\_ridges}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{, }\AttributeTok{scale =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Ridgeline Plot of Danceability by Key Mode"}\NormalTok{,}
-       \AttributeTok{x =} \StringTok{"Danceability"}\NormalTok{,}
-       \AttributeTok{y =} \StringTok{"Key Mode"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{, }
-        \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \DecValTok{1}\NormalTok{),}
-        \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-5-2.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ danceability, }\AttributeTok{y =}\NormalTok{ key\_name, }\AttributeTok{fill =}\NormalTok{ key\_name)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_density\_ridges}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{, }\AttributeTok{scale =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Ridgeline Plot of Danceability by Key Name"}\NormalTok{,}
-       \AttributeTok{x =} \StringTok{"Danceability"}\NormalTok{,}
-       \AttributeTok{y =} \StringTok{"Key Name"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{, }
-        \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \DecValTok{1}\NormalTok{),}
-        \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-5-3.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{\# 2. Energy vs Song Features}
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ energy, }\AttributeTok{y =} \FunctionTok{as.factor}\NormalTok{(key), }\AttributeTok{fill =} \FunctionTok{as.factor}\NormalTok{(key))) }\SpecialCharTok{+}
-  \FunctionTok{geom\_density\_ridges}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{, }\AttributeTok{scale =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Ridgeline Plot of Energy by Key"}\NormalTok{,}
-       \AttributeTok{x =} \StringTok{"Energy"}\NormalTok{,}
-       \AttributeTok{y =} \StringTok{"Key"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{, }
-        \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \DecValTok{1}\NormalTok{),}
-        \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-5-4.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ energy, }\AttributeTok{y =} \FunctionTok{as.factor}\NormalTok{(key\_mode), }\AttributeTok{fill =} \FunctionTok{as.factor}\NormalTok{(key\_mode))) }\SpecialCharTok{+}
-  \FunctionTok{geom\_density\_ridges}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{, }\AttributeTok{scale =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Ridgeline Plot of Energy by Key Mode"}\NormalTok{,}
-       \AttributeTok{x =} \StringTok{"Energy"}\NormalTok{,}
-       \AttributeTok{y =} \StringTok{"Key Mode"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{, }
-        \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \DecValTok{1}\NormalTok{),}
-        \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-5-5.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ energy, }\AttributeTok{y =}\NormalTok{ key\_name, }\AttributeTok{fill =}\NormalTok{ key\_name)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_density\_ridges}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{, }\AttributeTok{scale =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Ridgeline Plot of Energy by Key Name"}\NormalTok{,}
-       \AttributeTok{x =} \StringTok{"Energy"}\NormalTok{,}
-       \AttributeTok{y =} \StringTok{"Key Name"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{, }
-        \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \DecValTok{1}\NormalTok{),}
-        \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-5-6.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{\# 3. Loudness vs Song Features}
-\FunctionTok{ggplot}\NormalTok{(data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ loudness, }\AttributeTok{y =} \FunctionTok{as.factor}\NormalTok{(key), }\AttributeTok{fill =} \FunctionTok{as.factor}\NormalTok{(key))) }\SpecialCharTok{+}
-  \FunctionTok{geom\_density\_ridges}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{, }\AttributeTok{scale =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Ridgeline Plot of Loudness by Key"}\NormalTok{,}
-       \AttributeTok{x =} \StringTok{"Loudness"}\NormalTok{,}
-       \AttributeTok{y =} \StringTok{"Key"}\NormalTok{) }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{, }
-        \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{45}\NormalTok{, }\AttributeTok{vjust =} \DecValTok{1}\NormalTok{),}
-        \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{final-project_files/figure-latex/unnamed-chunk-5-7.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{\# You can continue similarly for the rest of the combinations of song features (key, key\_mode, key\_name)}
-\CommentTok{\# and Spotify features (speechiness, acousticness, instrumentalness, liveness, valence)}
+\CommentTok{\# Create Shiny app}
+\FunctionTok{shinyApp}\NormalTok{(}\AttributeTok{ui =}\NormalTok{ ui, }\AttributeTok{server =}\NormalTok{ server)}
 \end{Highlighting}
 \end{Shaded}
 

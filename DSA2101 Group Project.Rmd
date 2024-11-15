@@ -1,0 +1,249 @@
+---
+title: "DSA2101 Group Project"
+author: ""
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, include = TRUE,
+                      fig.align = "center",  out.width = "80%")
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(gridExtra) 
+library(reshape2)
+library(gganimate)
+library(glue)
+# Disable scientific notation
+options(scipen = 999)
+```
+
+```{r}
+# install.packages("tidytuesdayR")
+
+tuesdata <- tidytuesdayR::tt_load('2023-10-17')
+
+taylor_album_songs <- tuesdata$taylor_album_songs
+taylor_all_songs <- tuesdata$taylor_all_songs
+taylor_albums <- tuesdata$taylor_albums
+```
+
+# Missing Values is not being removed since it indicates that there is no data.
+
+# Check the uniqueness
+
+### taylor_album_songs
+```{r}
+glimpse(taylor_album_songs)
+```
+##### Number of album
+```{r}
+taylor_album_songs %>% count(album_name)
+```
+#### Filter track_name that has n > 1
+```{r}
+taylor_album_songs %>% count(track_name) %>% filter(n > 1)
+# None
+```
+
+
+### taylor_all_songs
+```{r}
+glimpse(taylor_all_songs)
+```
+#### Number of album_name occurrences
+```{r}
+taylor_all_songs %>% count(album_name)
+# the album that's present in taylor_album_songs has the number of occurrences
+# some albums are not present in taylor_album_songs
+```
+#### Checking the albums in taylor_all_songs that are not present in taylor_album_songs
+```{r}
+anti_join(taylor_all_songs, taylor_album_songs, by = "album_name")
+```
+```{r}
+anti_join(taylor_all_songs, taylor_album_songs, by = "album_name") %>% count(album_name)
+# album_name Beautiful Eyes, Fearless, Red, and The Taylor Swift Holiday Collection are not
+# in taylor_album_songs;
+# 
+# songs with album_name=NA means that the songs are not in any album;
+#
+# songs in Beautiful Eyes have a lot of missing data
+```
+#### Filter track_name that has n > 1
+```{r}
+taylor_all_songs %>% count(track_name) %>% filter(n > 1)
+# I'm Only Me When I'm With You appears twice
+```
+#### Check the duplicate track_name
+```{r}
+taylor_all_songs %>% filter(track_name %in% "I'm Only Me When I'm With You")
+# the song appears in Taylor Swift and Beautiful Eyes album
+```
+
+### taylor_albums
+```{r}
+glimpse(taylor_albums)
+```
+#### Filter album_name that has n > 1
+```{r}
+taylor_albums %>% count(album_name) %>% filter(n > 1)
+# None
+```
+
+
+
+# Handling Some Missing Data
+
+### Change artist = NA to artist = "Taylor Swift" in taylor_all_songs, for album_name = Beautiful Eyes
+```{r}
+taylor_all_songs$artist <- ifelse(taylor_all_songs$album_name == "Beautiful Eyes",
+                                  "Taylor Swift", taylor_all_songs$artist)
+```
+```{r}
+taylor_all_songs
+```
+
+
+# Joining Data
+
+### Joining by album for taylor_album_songs and taylor_albums
+```{r}
+album <- left_join(taylor_album_songs, taylor_albums, by = "album_name") %>%
+  select(album_name, ep = ep.x, album_release = album_release.x, track_number, track_name,
+         artist, featuring, bonus_track, single_release, track_release, danceability,
+         energy, key, loudness, mode, speechiness, acousticness, instrumentalness,
+         liveness, valence, tempo, time_signature, duration_ms, explicit, key_name,
+         mode_name, key_mode, metacritic_score, user_score)
+glimpse(album)
+# all rows have metacritic_score and user_score
+```
+
+
+
+
+
+```{r}
+# Convert track_release to Date format and extract year
+album$track_release <- as.Date(album$track_release)
+album$year_group <- cut(album$track_release, 
+                        breaks = as.Date(c("2005-01-01", "2010-01-01", "2015-01-01", "2020-01-01", "2025-01-01")),
+                        labels = c("2006-2009", "2010-2014", "2015-2019", "2020-2024"))
+
+# Function to calculate correlation coefficient for each year group
+get_correlation <- function(album, x, y) {
+  album %>%
+    group_by(year_group) %>%
+    summarize(correlation = round(cor(.data[[x]], .data[[y]], use = "complete.obs"), 2))
+}
+
+# Calculate correlation coefficients for energy vs loudness
+correlations <- get_correlation(album, "loudness", "energy")
+
+# Merge correlations back into the original data
+album <- merge(album, correlations, by = "year_group")
+
+# Create scatter plot with LOESS lines and 95% confidence intervals for energy vs loudness
+ggplot(album, aes(x = loudness, y = energy)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = TRUE, color = "red") +
+  facet_wrap(~ year_group) +
+  
+  # Add correlation coefficient as a text annotation for each year group
+  geom_text(data = correlations, aes(label = sprintf("r = %.2f", correlation), x = -12, y = 0.9), 
+            inherit.aes = FALSE, size = 3.7, color = "blue") + 
+  labs(title = "Energy vs Loudness by Year Group",
+       subtitle = "r represents the correlation coefficient between energy and loudness",
+       x = "Loudness",
+       y = "Energy",
+       caption = "The grey band represents the 95% confidence interval around the LOESS trendline.") +
+  theme_minimal()
+
+```
+
+
+```{r}
+
+# Calculate the percentage of songs by key
+key_distribution <- album %>%
+  group_by(key_name, album_release) %>%
+  summarize(count = n()) %>%
+  mutate(percentage = (count / sum(count, na.rm = T)) * 100) %>%
+  na.omit()
+
+# Define the positions for white and black keys on a piano
+white_keys <- c("C", "D", "E", "F", "G", "A", "B")
+black_keys <- c("C#", "D#", "F#", "G#", "A#")
+
+# Define positions for keys on the keyboard (x-axis)
+key_positions <- data.frame(
+  key_name = c(white_keys, black_keys),
+  position = c(1, 2, 3, 4, 5, 6, 7, 1.5, 2.5, 4.5, 5.5, 6.5) # Black keys centered between white keys
+)
+
+dfcur <- NULL
+for (y in sort(unique(key_distribution$album_release))){
+  temp = key_distribution %>%
+    filter(album_release == y) %>%
+    full_join(key_positions,  by = "key_name") %>%
+    replace_na(list(count = 0, percentage = 0))
+  temp$album_release = y
+  dfcur <- rbind(dfcur, temp)
+}
+
+key_distribution <- dfcur
+
+# Create a custom keyboard plot
+animated_plot <- ggplot() +
+  
+  # White keys (rectangles side by side with no gaps)
+  geom_rect(data = key_distribution %>% filter(key_name %in% white_keys),
+            aes(xmin = position - 0.5, xmax = position + 0.5,
+                ymin = -0.3, ymax = 0.8), fill = "#FFFFFF", color = "#000000") +
+  
+  # Black keys (rectangles centered on top of white keys)
+  geom_rect(data = key_distribution %>% filter(key_name %in% black_keys),
+            aes(xmin = position - 0.25, xmax = position + 0.25,
+                ymin = 0.1, ymax = 0.8), fill = "#000000") +
+  
+  # Add text labels for white keys with gradient color based on percentage and white text
+  geom_label(data = key_distribution %>% filter(key_name %in% white_keys),
+             aes(x = position, y = -0.5,
+                 label = key_name,
+                 fill = percentage), color = "#FFFFFF", size = 6.7) + # White text for contrast
+  
+  # Add text labels for black keys with gradient color based on percentage and black text
+  geom_label(data = key_distribution %>% filter(key_name %in% black_keys),
+             aes(x = position, y = 0.325,
+                 label = key_name,
+                 fill = percentage), color = "#000000", size = 6) + # Black text for contrast
+  
+  # Use viridis color scale for percentage gradient
+  scale_fill_viridis_c(option = "plasma", direction = -1) +
+  
+  # Adjust plot limits and remove axis labels/ticks to resemble a keyboard
+  scale_y_continuous(limits = c(-2, NA)) +
+  
+  labs(title = "{closest_state} - Percentage of Songs by Key",
+       x = NULL,
+       y = NULL,
+       fill = "% of Songs") +
+  
+  theme_void() +   # Remove axis lines and ticks
+  theme(legend.position="top") +
+  
+  # Animate over album_release
+  transition_states(album_release) +
+  enter_fade() + exit_fly(y_loc = 1)
+
+# Save the animation as a GIF
+animate(animated_plot, duration = 10, fps = 1, renderer = av_renderer())
+
+```
+

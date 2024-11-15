@@ -1,0 +1,52 @@
+---
+title: "Loudness vs Energy Plot for Different Albums"
+date: "`r Sys.Date()`"
+output:
+    rmarkdown::html_document:
+    toc: true
+    code_folding: "hide"
+---
+
+```{r setup, echo = FALSE, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+suppressPackageStartupMessages({
+  suppressWarnings({
+    library(tidyverse)
+    library(plotly)
+    library(DT)
+  })
+})
+```
+
+```{r}
+# Load the data
+df <- read.csv("traylor_album_songs.csv")
+
+# Filter necessary columns for the plot
+loudness_vs_energy <- df %>% 
+  select(album_name, track_name, loudness, energy)
+
+# Declare the conditional search variable
+albums <- highlight_key(x = loudness_vs_energy, ~album_name)
+
+# Initialize the base plotly
+plot_initialize <- plot_ly(albums, color = I("black")) %>%
+  group_by(album_name)
+
+# Create a scatter plot
+loudness_energy_plot <- plot_initialize %>%
+  add_markers(x = ~loudness, y = ~energy)
+
+# Set up the highlight key
+highlight(
+  loudness_energy_plot,
+  on = "plotly_click",
+  selectize = TRUE,
+  dynamic = TRUE,
+  persistent = TRUE
+)
+```
+
+
